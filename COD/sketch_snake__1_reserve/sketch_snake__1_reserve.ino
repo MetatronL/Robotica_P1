@@ -183,12 +183,27 @@ class snakeClass : public game,public queue{
       
     }
 
+
+
+      void createFood(){
+          while( 1 )
+          {
+              randomValue = random(0,1023);
+              randomX = randomValue%8;
+              randomValue = random(0,1023);
+              randomY = randomValue%8;
+              if( matrix[randomX][randomY] == 0 )
+                break;
+          }
+          matrix[randomX][randomY] = 2;
+          lc.setLed(0,randomX,randomY,true);
+     }
     
 public:
     void move(){
         currentDirection = interpretNewDirection();
         currentDirection = getValidDirection();
-        
+        lastDirection = currentDirection;
         coord newPosition = getTop(); 
         
         if( currentDirection == _right)
@@ -202,9 +217,9 @@ public:
     
          coord oldestPosition = getBot();
          if(matrix[newPosition.x][newPosition.y] == 2){
-            dotState = _dotNotSet ; 
+            
             incrementScore();
-           
+            createFood();
         }else if( matrix[newPosition.x][newPosition.y] == 1 &&  !(newPosition == oldestPosition) ){
             currentStateOfGame = _gameOver;
             //setGameOver();
@@ -220,7 +235,7 @@ public:
        push_back(coord(3,2) );
        push_back(coord(3,3) );
        lastDirection = _right;
-        
+       createFood();
     }
 
     void Continue(){
@@ -235,18 +250,7 @@ snakeClass *snake;
 
 
 
- void getNewRandomValuesXY(){
-      while(1)
-      {
-          randomValue = random(0,1023);
-          randomX = randomValue%8;
-          randomValue = random(0,1023);
-          randomY = randomValue%8;
-          if( matrix[randomX][randomY] == 0 )
-            break;
-      }
-      matrix[randomX][randomY] = 2;
- }
+ 
 void writeDebugRandomValuesXY(){
       Serial.print("[");
       Serial.print(randomX,DEC);
