@@ -1,21 +1,30 @@
 
 #include <LedControl.h>
+#include <LiquidCrystal.h>
 #include <Arduino.h>
 
-int pinX = A1 , pinY = A2, pinCenter = A3;
-
-
-LedControl lc(11,2,10,1);
-
-int     currentStateOfGame, timeOfDelay = 100;
-const int _justStarted = 0 , _snakePreGame = 101,_snakeReadyToGo = 102, _gameOver = -1;
-int randomValue,randomX,randomY;
-int lastDirection, newDirection ; 
-const int _up = 1, _down = -1, _right = 2, _left = -2;
-int dotState;
-const int _dotSetAndWaiting = 1, _dotNotSet = 0;
+int pinX = A3 , pinY = A4, pinCenter = A5;
 
 const int waitForInputCounts = 4;
+const int _up = 1, _down = -1, _right = 2, _left = -2;
+const int _justStarted = 0 , _snakePreGame = 101,_snakeReadyToGo = 102, _gameOver = -1;
+const int _dotSetAndWaiting = 1, _dotNotSet = 0;
+
+LedControl lc(10,13,11,1);
+
+const int rs = 6, en = 7, d4 = 2, d5 = 3, d6 = 4, d7 = 5;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+
+
+int     currentStateOfGame, timeOfDelay = 100;
+
+int randomValue,randomX,randomY;
+int lastDirection, newDirection ; 
+
+int dotState;
+
+
 int currentTimeForWait = 0;
 int movementProcessed = 1;
 
@@ -114,20 +123,7 @@ private:
 
 queue positionQueue;
 
-void setup(){
 
-  
-  lc.shutdown(0,false);
-  lc.setIntensity(0,10);
-
-  currentStateOfGame = _justStarted;
-  randomSeed(analogRead(A0));   
-  Serial.begin(9600); 
-  dotState = _dotNotSet;
-
-  
-
-}
 
 
 
@@ -223,22 +219,51 @@ int readDirectionInput(int lastDirection){
     yValue /= 128;
     if( isFull(xValue) == 1 &&  isFull(yValue) == 0 ){
           if( xValue > 5)
-              return _down;
-           else 
               return _up;
+           else 
+              return _down;
     }
     if( isFull(xValue) == 0 &&  isFull(yValue) == 1 ){
           if( yValue > 5)
-              return _right;
-           else 
               return _left;
+           else 
+              return _right;
     }
     return lastDirection;
 }
-   
+
+
+
+
+void setup(){
+
+  
+  lc.shutdown(0,false);
+  lc.setIntensity(0,10);
+
+  currentStateOfGame = _justStarted;
+  randomSeed(analogRead(A0));   
+  Serial.begin(9600); 
+  dotState = _dotNotSet;
+
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+  // Print a message to the LCD.
+  lcd.print("hello, world!");
+  
+
+}
+
+
+  
 void loop()
 
 {
+
+     lcd.setCursor(0, 1);
+  // print the number of seconds since reset:
+  lcd.print(millis() / 1000);
+  
       switch( currentStateOfGame  ){
         
             case _justStarted :
