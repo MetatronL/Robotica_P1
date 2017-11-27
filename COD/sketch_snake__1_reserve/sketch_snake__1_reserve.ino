@@ -6,8 +6,8 @@
 int pinX = A3 , pinY = A4, pinCenter = 0;
 
 const int waitForInputCounts = 4;
-const int _up = 1, _down = -1, _right = 2, _left = -2;
-const int _justStarted = 0 , _snakePreGame = 101,_snakeReadyToGo = 102, _gameOver = -1;
+
+const int _justStarted = 0 , _snakePreGame = 101,_snakeReadyToGo = 102, _gameOver = -1 , _snake = 201;
 const int _dotSetAndWaiting = 1, _dotNotSet = 0;
 
 LedControl lc(10,13,11,1);
@@ -17,14 +17,15 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 
 int gamePause = 0 ;
-int     currentStateOfGame, timeOfDelay = 100;
-int snakeScore = 0;
+int     currentStateOfGame, defaultDelay = 100;
+
+
 
 int randomValue,randomX,randomY;
-int lastDirection, newDirection ; 
+//int lastDirection, newDirection ; 
 
 int dotState;
-int buttonState;
+int centerButtonState = 0, xValue = 0, yValue = 0;
 
 int currentTimeForWait = 0;
 int movementProcessed = 1;
@@ -47,11 +48,12 @@ struct coord{
 class queue{
 private: 
   static const int capacity = 120;
+  coord holder[capacity];
   int bot,top;
   int botTimes, topTimes;
+  const int _emptyQueue = -1;
   int advanceTop(){
-        int old_top = top;
-        (++top);
+        int old_top = top++;
         if(top == capacity){
           ++topTimes;
           top = 0; 
@@ -59,20 +61,18 @@ private:
         return old_top;
     }
     int advanceBot(){
-        int old_bot = bot;
-        (++bot);
+        int old_bot = bot++;
         if(bot == capacity){
           ++botTimes;
           bot = 0; 
         }
         return old_bot;
     }
-    const int _emptyQueue = -1;
+    
 
  public:
  
   
-  coord holder[capacity];
   queue() {bot=0; top=0; botTimes = 0; topTimes = 0;}
 
   
@@ -126,8 +126,112 @@ queue positionQueue;
 
 
 
+class game{
+    int score;
+
+public:
+    game():score(0){}
+    virtual void move();
+    //virtual void printScore();
+    virtual void start();
+    virtual void Continue();
+
+    void incrementScore(){
+          ++score; 
+    }
+    void resetScore(){
+          score = 0; 
+    }
+    int& getScore(){
+          return score;
+    }
+
+  
+};
+
+class snakeClass : public game,public queue{
+    int lastDirection, currentDirection;
+    const int _up = 1, _down = -1, _right = 2, _left = -2;
+    int interpretNewDirection(){
+        xValue /= 128;
+        yValue /= 128;
+        if( isFull(xValue) == 1 &&  isFull(yValue) == 0 ){
+              if( xValue > 5)
+                  return _up;
+               else 
+                  return _down;
+        }
+        if( isFull(xValue) == 0 &&  isFull(yValue) == 1 ){
+              if( yValue > 5)
+                  return _left;
+               else 
+                  return _right;
+        }
+        return lastDirection;
+
+      
+    }
+
+    int getValidDirection(){
+        if(  currentDirection == -lastDirection)
+            return lastDirection;
+        return currentDirection;
+    }
+
+    int isFull(int input){
+        return input > 5 || input < 2;
+      
+    }
+
+    
+public:
+    void move(){
+        currentDirection = interpretNewDirection();
+        currentDirection = getValidDirection();
+        
+        coord newPosition = getTop(); 
+        
+        if( currentDirection == _right)
+            newPosition.y = (newPosition.y+1)%8;
+         else if( currentDirection == _left)
+              newPosition.y = (newPosition.y > 0) ? newPosition.y - 1 : 7;
+        else if( currentDirection == _up)
+              newPosition.x = (newPosition.x < 7 ) ? newPosition.x + 1 : 0;
+        else if( currentDirection == _down)
+              newPosition.x = (newPosition.x > 0) ? newPosition.x - 1 : 7;
+    
+         coord oldestPosition = getBot();
+         if(matrix[newPosition.x][newPosition.y] == 2){
+            dotState = _dotNotSet ; 
+            incrementScore();
+           
+        }else if( matrix[newPosition.x][newPosition.y] == 1 &&  !(newPosition == oldestPosition) ){
+            currentStateOfGame = _gameOver;
+            //setGameOver();
+        }else{
+              pop();
+        }
+        
+        push_back(newPosition);
+    }
+
+    void start(){
+       push_back(coord(3,1) );
+       push_back(coord(3,2) );
+       push_back(coord(3,3) );
+       lastDirection = _right;
+        
+    }
+
+    void Continue(){
+        move();
+      
+    }
+    
+};
 
 
+snakeClass *snake;
 
 
 
@@ -154,21 +258,6 @@ void writeDebugRandomValuesXY(){
 }
 
 
-/*
-void setLedOn(coord positionOfLed){
-      // matrix[positionOfLed.x][positionOfLed.y] = 1;
-      // lc.setLed(0,positionOfLed.x,positionOfLed.y,true);
-       positionQueue.push_back(positionOfLed);
-
-}
-
-void setLedOff(coord oldestPosition){
-   // matrix[oldestPosition.x][oldestPosition.y] = 0;
-    //lc.setLed(0,oldestPosition.x,oldestPosition.y,false);
-   // matrix[oldestPosition.x][oldestPosition.y] = 0; 
-}
-*/
-
 void setGameOver(){
   lc.clearDisplay(0);     
   for(int i=0; i <= 7; ++i){
@@ -178,7 +267,7 @@ void setGameOver(){
   
 }
 
-
+/*
 void moveSnake(int currentDirection){
   
     
@@ -208,15 +297,12 @@ void moveSnake(int currentDirection){
     //setLedOn(newPosition);
     positionQueue.push_back(newPosition);
 }
-int isFull(int input){
-    return input > 5 || input < 2;
-  
-}
+*/
 
+
+/*
 int readDirectionInput(int lastDirection){
-    int xValue = analogRead(pinX);  
-    int yValue = analogRead(pinY);
-
+  
     xValue /= 128;
     yValue /= 128;
     if( isFull(xValue) == 1 &&  isFull(yValue) == 0 ){
@@ -234,7 +320,7 @@ int readDirectionInput(int lastDirection){
     return lastDirection;
 }
 
-
+*/
 
 
 void setup(){
@@ -262,6 +348,13 @@ void updateScore(const int &snakeScore){
     lcd.print(snakeScore);
 }
 
+void updateInputValues(){
+  centerButtonState = digitalRead(pinCenter);
+  xValue = analogRead(pinX);  
+  yValue = analogRead(pinY);
+  
+}
+
 void loop()
 
 {
@@ -270,13 +363,33 @@ void loop()
   // print the number of seconds since reset:
   //lcd.print(millis() / 1000);
   //lcd.scrollDisplayRight();
-    updateScore(snakeScore);
+    //updateScore(snakeScore);
     
-    buttonState = digitalRead(pinCenter);
-    if( buttonState )
-      gamePause = 1 - gamePause;
+      updateInputValues();
+    
+      if( centerButtonState )
+          gamePause = 1 - gamePause;
+     // if( gamePause)
+       //   return ;
+
+      switch( currentStateOfGame ){
+          case _justStarted:
+
+          
+              //Reminder
+              //Add Game Menu
+
+              
+              currentStateOfGame = _snake;
+              snake = new snakeClass;
+              snake->start();
+              break;
+           case _snake:
+              snake->Continue();
+              break;
+      }
       
-      if( gamePause == 0 ) 
+      /*if( gamePause == 0 ) 
       switch( currentStateOfGame  ){
         
             case _justStarted :
@@ -323,14 +436,15 @@ void loop()
 
                  break;
         
-      }
+      }*/
   
       
 
   
 
      
-    delay(timeOfDelay);
+    delay(defaultDelay);
+    
 }
 
 
