@@ -3,7 +3,7 @@
 #include <LiquidCrystal.h>
 #include <Arduino.h>
 
-int pinX = A3 , pinY = A4, pinCenter = A5;
+int pinX = A3 , pinY = A4, pinCenter = 0;
 
 const int waitForInputCounts = 4;
 const int _up = 1, _down = -1, _right = 2, _left = -2;
@@ -16,14 +16,15 @@ const int rs = 6, en = 7, d4 = 2, d5 = 3, d6 = 4, d7 = 5;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 
-
+int gamePause = 0 ;
 int     currentStateOfGame, timeOfDelay = 100;
+int snakeScore = 0;
 
 int randomValue,randomX,randomY;
 int lastDirection, newDirection ; 
 
 int dotState;
-
+int buttonState;
 
 int currentTimeForWait = 0;
 int movementProcessed = 1;
@@ -196,6 +197,7 @@ void moveSnake(int currentDirection){
      coord oldestPosition = positionQueue.getBot();
      if(matrix[newPosition.x][newPosition.y] == 2){
         dotState = _dotNotSet ; 
+        snakeScore++;
        
     }else if( matrix[newPosition.x][newPosition.y] == 1 &&  !(newPosition == oldestPosition) ){
         currentStateOfGame = _gameOver;
@@ -251,19 +253,30 @@ void setup(){
   // Print a message to the LCD.
   lcd.print("hello, world!");
   
-
+  pinMode(pinCenter, INPUT_PULLUP); 
 }
 
 
-  
+void updateScore(const int &snakeScore){
+    lcd.setCursor(0, 1);
+    lcd.print(snakeScore);
+}
+
 void loop()
 
 {
 
-     lcd.setCursor(0, 1);
+    // lcd.setCursor(0, 1);
   // print the number of seconds since reset:
-  lcd.print(millis() / 1000);
-  
+  //lcd.print(millis() / 1000);
+  //lcd.scrollDisplayRight();
+    updateScore(snakeScore);
+    
+    buttonState = digitalRead(pinCenter);
+    if( buttonState )
+      gamePause = 1 - gamePause;
+      
+      if( gamePause == 0 ) 
       switch( currentStateOfGame  ){
         
             case _justStarted :
