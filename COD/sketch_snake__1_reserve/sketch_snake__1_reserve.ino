@@ -34,6 +34,19 @@ int movementProcessed = 1;
 //int queue[130] , queueTop  , queueBottom;
 int matrix[8][8];
 
+int isFull(int input){
+        return input > 5 || input < 2;
+      
+    }
+
+void setGameOver(){
+  lc.clearDisplay(0);     
+  for(int i=0; i <= 7; ++i){
+      lc.setLed(0,i,i,true);
+      lc.setLed(0,i,7-i,true);
+  }
+  
+}
 
 struct coord{
   int x,y;
@@ -128,6 +141,8 @@ queue positionQueue;
 
 class game{
     int score;
+    int machineDelay , loopWaitCount ;
+    int preferredDelay; int currentLoop;
 
 public:
     game():score(0){}
@@ -136,6 +151,25 @@ public:
     virtual void start();
     virtual void Continue();
 
+    game(int inputMachineDelay, int inputPreferredDelay){
+        machineDelay = inputMachineDelay;
+        preferredDelay = inputPreferredDelay;
+        loopWaitCount = preferredDelay / machineDelay;
+        if(  loopWaitCount < 1)
+            loopWaitCount = 1;
+        currentLoop = 0;
+        
+    }
+
+    void incrementLoop(){
+      ++currentLoop;
+      currentLoop %= loopWaitCount;
+    }
+
+    void isTimeToUpdate(){
+      return currentLoop  == 0 ;
+    }
+    
     void incrementScore(){
           ++score; 
     }
@@ -152,6 +186,8 @@ public:
 class snakeClass : public game,public queue{
     int lastDirection, currentDirection;
     const int _up = 1, _down = -1, _right = 2, _left = -2;
+    
+    
     int interpretNewDirection(){
         xValue /= 128;
         yValue /= 128;
@@ -178,10 +214,7 @@ class snakeClass : public game,public queue{
         return currentDirection;
     }
 
-    int isFull(int input){
-        return input > 5 || input < 2;
-      
-    }
+    
 
 
 
@@ -200,6 +233,8 @@ class snakeClass : public game,public queue{
      }
     
 public:
+    //snake(int time
+
     void move(){
         currentDirection = interpretNewDirection();
         currentDirection = getValidDirection();
@@ -217,12 +252,14 @@ public:
     
          coord oldestPosition = getBot();
          if(matrix[newPosition.x][newPosition.y] == 2){
-            
+            matrix[newPosition.x][newPosition.y] = 1;
             incrementScore();
             createFood();
-        }else if( matrix[newPosition.x][newPosition.y] == 1 &&  !(newPosition == oldestPosition) ){
+        }else if( matrix[newPosition.x][newPosition.y] == 1 ){
+            setGameOver();
             currentStateOfGame = _gameOver;
-            //setGameOver();
+//reminder
+//add game over            
         }else{
               pop();
         }
@@ -262,69 +299,8 @@ void writeDebugRandomValuesXY(){
 }
 
 
-void setGameOver(){
-  lc.clearDisplay(0);     
-  for(int i=0; i <= 7; ++i){
-      lc.setLed(0,i,i,true);
-      lc.setLed(0,i,7-i,true);
-  }
-  
-}
-
-/*
-void moveSnake(int currentDirection){
-  
-    
-    
-    coord newPosition = positionQueue.getTop(); 
-    
-    if( currentDirection == _right)
-        newPosition.y = (newPosition.y+1)%8;
-     else if( currentDirection == _left)
-          newPosition.y = (newPosition.y > 0) ? newPosition.y - 1 : 7;
-    else if( currentDirection == _up)
-          newPosition.x = (newPosition.x < 7 ) ? newPosition.x + 1 : 0;
-    else if( currentDirection == _down)
-          newPosition.x = (newPosition.x > 0) ? newPosition.x - 1 : 7;
-
-     coord oldestPosition = positionQueue.getBot();
-     if(matrix[newPosition.x][newPosition.y] == 2){
-        dotState = _dotNotSet ; 
-        snakeScore++;
-       
-    }else if( matrix[newPosition.x][newPosition.y] == 1 &&  !(newPosition == oldestPosition) ){
-        currentStateOfGame = _gameOver;
-        //setGameOver();
-    }else{
-          positionQueue.pop();
-    }
-    //setLedOn(newPosition);
-    positionQueue.push_back(newPosition);
-}
-*/
 
 
-/*
-int readDirectionInput(int lastDirection){
-  
-    xValue /= 128;
-    yValue /= 128;
-    if( isFull(xValue) == 1 &&  isFull(yValue) == 0 ){
-          if( xValue > 5)
-              return _up;
-           else 
-              return _down;
-    }
-    if( isFull(xValue) == 0 &&  isFull(yValue) == 1 ){
-          if( yValue > 5)
-              return _left;
-           else 
-              return _right;
-    }
-    return lastDirection;
-}
-
-*/
 
 
 void setup(){
@@ -341,9 +317,10 @@ void setup(){
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   // Print a message to the LCD.
-  lcd.print("hello, world!");
-  
-  pinMode(pinCenter, INPUT_PULLUP); 
+  lcd.print("Press anything");
+  lcd.setCursor(0, 1);
+  lcd.print("to start..");
+  pinMode(pinCenter, INPUT  ); 
 }
 
 
@@ -356,6 +333,17 @@ void updateInputValues(){
   centerButtonState = digitalRead(pinCenter);
   xValue = analogRead(pinX);  
   yValue = analogRead(pinY);
+  
+}
+
+void waitForInput(){
+    while( 1 == 1){
+       updateInputValues();
+       if( centerButtonState == LOW || isFull(xValue/128) || isFull(yValue/128) )
+          break;
+       delay(50);
+      
+    }
   
 }
 
@@ -373,8 +361,8 @@ void loop()
     
       if( centerButtonState )
           gamePause = 1 - gamePause;
-     // if( gamePause)
-       //   return ;
+      if( gamePause)
+          return;
 
       switch( currentStateOfGame ){
           case _justStarted:
@@ -382,8 +370,8 @@ void loop()
           
               //Reminder
               //Add Game Menu
-
-              
+              waitForInput();
+              lcd.clear();  
               currentStateOfGame = _snake;
               snake = new snakeClass;
               snake->start();
@@ -393,54 +381,7 @@ void loop()
               break;
       }
       
-      /*if( gamePause == 0 ) 
-      switch( currentStateOfGame  ){
-        
-            case _justStarted :
-                 lc.clearDisplay(1);     
-                 currentStateOfGame = _snakePreGame;
-                 break;
-                 
-             case _snakePreGame :
-
-                 positionQueue.push_back(coord(3,1) );
-                 positionQueue.push_back(coord(3,2) );
-                 positionQueue.push_back(coord(3,3) );
-                 //positionQueue.turnOnAllStartup();
-
-                 lastDirection = _right;
-                 currentStateOfGame = _snakeReadyToGo;
-                 currentTimeForWait = 0;
-                 
-                 break;
-            case _snakeReadyToGo:
-                  if( dotState == _dotNotSet ){
-                      getNewRandomValuesXY();
-                      lc.setLed(0,randomX,randomY,true);
-                      writeDebugRandomValuesXY();
-                      dotState = _dotSetAndWaiting;
-                  }
-
-                   newDirection = readDirectionInput(lastDirection);
-                      if(  newDirection != -lastDirection)
-                           lastDirection= newDirection ;
-                   
-                  if( ++currentTimeForWait == waitForInputCounts ){
-                      currentTimeForWait = 0;
-                     
-                      moveSnake(lastDirection);
-                  }
-                  
-                 break;
-              case _gameOver:
-                 setGameOver();
-                  break;
-            default:
-
-
-                 break;
-        
-      }*/
+     
   
       
 
