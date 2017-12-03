@@ -166,7 +166,7 @@ public:
       currentLoop %= loopWaitCount;
     }
 
-    void isTimeToUpdate(){
+    int isTimeToUpdate(){
       return currentLoop  == 0 ;
     }
     
@@ -287,16 +287,6 @@ snakeClass *snake;
 
 
 
- 
-void writeDebugRandomValuesXY(){
-      Serial.print("[");
-      Serial.print(randomX,DEC);
-      Serial.print(",");
-      Serial.print(randomY,DEC);
-      Serial.print("]\n");
-
-  
-}
 
 
 
