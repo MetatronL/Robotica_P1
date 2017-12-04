@@ -45,7 +45,9 @@ int isFull(int input){
     }
 
 void setGameOver(){
-  lc.clearDisplay(0);     
+  lc.clearDisplay(0);
+  lcd.setCursor(0, 0);
+  lcd.print("Game Over!"); 
   for(int i=0; i <= 7; ++i){
       lc.setLed(0,i,i,true);
       lc.setLed(0,i,7-i,true);
@@ -303,14 +305,26 @@ public:
         coord newPosition = getTop(); 
         
         if( currentDirection == _right)
-            newPosition.y = (newPosition.y+1)%8;
+            newPosition.y = newPosition.y + 1;
          else if( currentDirection == _left)
-              newPosition.y = (newPosition.y > 0) ? newPosition.y - 1 : 7;
+              newPosition.y = newPosition.y - 1;
         else if( currentDirection == _up)
-              newPosition.x = (newPosition.x < 7 ) ? newPosition.x + 1 : 0;
+              newPosition.x = newPosition.x  + 1 ;
         else if( currentDirection == _down)
-              newPosition.x = (newPosition.x > 0) ? newPosition.x - 1 : 7;
-    
+              newPosition.x = newPosition.x  - 1 ;
+
+        if(useBorder && (newPosition.x == -1 ||  newPosition.x == 8 ||  newPosition.y == -1 || newPosition.y == 8 ) ){
+            setGameOver();
+            currentStateOfGame = _gameOver;
+            return;
+        }
+        if(  newPosition.x == -1)
+             newPosition.x = 7;
+        if(  newPosition.y == -1)
+             newPosition.y = 7;
+        newPosition.x %= 8;
+        newPosition.y %= 8;
+          
          coord oldestPosition = getBot();
          if(matrix[newPosition.x][newPosition.y] == 2){
             matrix[newPosition.x][newPosition.y] = 1;
