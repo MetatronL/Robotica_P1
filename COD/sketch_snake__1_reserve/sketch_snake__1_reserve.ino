@@ -9,7 +9,7 @@ const int waitForInputCounts = 4;
 
 const int _justStarted = 0 , _snakePreGame = 101,_snakeReadyToGo = 102, _gameOver = -1 , _snake = 201;
 const int _dotSetAndWaiting = 1, _dotNotSet = 0;
-
+const int _up = 1, _down = -1, _right = 2, _left = -2;
 LedControl lc(10,13,11,1);
 
 const int rs = 6, en = 7, d4 = 2, d5 = 3, d6 = 4, d7 = 5;
@@ -17,7 +17,7 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 
 int gamePause = 0 ;
-int     currentStateOfGame, defaultDelay = 100;
+int     currentStateOfGame, defaultDelay = 25;
 
 
 
@@ -35,8 +35,13 @@ int movementProcessed = 1;
 int matrix[8][8];
 
 int isFull(int input){
-        return input > 5 || input < 2;
-      
+        if( input > 5 )
+            return 1;
+            
+        if( input < 2)
+            return -1;
+
+        return 0;
     }
 
 void setGameOver(){
@@ -140,16 +145,20 @@ queue positionQueue;
 
 
 class game{
+
     int score;
     int machineDelay , loopWaitCount ;
     int preferredDelay; int currentLoop;
+    
 
 public:
+    
     game():score(0){}
     virtual void move();
     //virtual void printScore();
     virtual void start();
     virtual void Continue();
+    virtual void waitForDifficulty();
 
     game(int inputMachineDelay, int inputPreferredDelay){
         machineDelay = inputMachineDelay;
@@ -158,7 +167,7 @@ public:
         if(  loopWaitCount < 1)
             loopWaitCount = 1;
         currentLoop = 0;
-        
+        score = 0;
     }
 
     void incrementLoop(){
@@ -167,7 +176,7 @@ public:
     }
 
     int isTimeToUpdate(){
-      return currentLoop  == 0 ;
+      return (currentLoop  == 0) ;
     }
     
     void incrementScore(){
@@ -180,24 +189,33 @@ public:
           return score;
     }
 
+    void setSpeed( int inputPreferredDelay ){
+        preferredDelay = inputPreferredDelay;
+        loopWaitCount = preferredDelay / machineDelay;
+        if(  loopWaitCount < 1)
+            loopWaitCount = 1;
+        currentLoop = 0;
+        score = 0;
+    }
+
   
 };
 
 class snakeClass : public game,public queue{
-    int lastDirection, currentDirection;
+    int lastDirection, currentDirection, foundWhileWaitingDirection;
     const int _up = 1, _down = -1, _right = 2, _left = -2;
-    
-    
+    const int difficultyEasyDelay = 400, difficultyMediumDelay = 300, difficultyHardDelay = 150;
+    int useBorder;
     int interpretNewDirection(){
         xValue /= 128;
         yValue /= 128;
-        if( isFull(xValue) == 1 &&  isFull(yValue) == 0 ){
+        if( isFull(xValue) &&  !isFull(yValue)  ){
               if( xValue > 5)
                   return _up;
                else 
                   return _down;
         }
-        if( isFull(xValue) == 0 &&  isFull(yValue) == 1 ){
+        if( !isFull(xValue) &&  isFull(yValue)  ){
               if( yValue > 5)
                   return _left;
                else 
@@ -231,13 +249,56 @@ class snakeClass : public game,public queue{
           matrix[randomX][randomY] = 2;
           lc.setLed(0,randomX,randomY,true);
      }
+
+     void updateDirection(){
+          currentDirection = interpretNewDirection();
+          currentDirection = getValidDirection();
+          
+         
+            
+  
+          if( lastDirection !=  currentDirection  )
+              foundWhileWaitingDirection = currentDirection;
+           else if( foundWhileWaitingDirection != 0 )
+              currentDirection = foundWhileWaitingDirection ;
+          
+          
+          
+      
+     }
+     void updateDifficulty(int choice){
+        if( choice == 0)
+            return;
+        
+        else if( choice == _up){
+            // Ease 
+            // Defualt Setting
+            useBorder = 0;
+        }
+        else if( choice == _right){
+            // Medium
+            setSpeed( difficultyMediumDelay );
+            useBorder = 1;
+        }
+        else if( choice == _down){
+            // Hard
+            setSpeed( difficultyHardDelay );
+            useBorder = 1;
+        }
+          
+        
+
+      
+     }
     
 public:
-    //snake(int time
+     
+    
+    snakeClass(int inputMachineDelay) : game(inputMachineDelay, 400) {   }
 
     void move(){
-        currentDirection = interpretNewDirection();
-        currentDirection = getValidDirection();
+
+        foundWhileWaitingDirection = 0;
         lastDirection = currentDirection;
         coord newPosition = getTop(); 
         
@@ -265,6 +326,7 @@ public:
         }
         
         push_back(newPosition);
+        updateScore(getScore());
     }
 
     void start(){
@@ -275,17 +337,81 @@ public:
        createFood();
     }
 
+    void waitForDifficulty(){
+        int choice = 0;
+        lcd.clear();
+         
+        lcd.setCursor(0, 0);
+        lcd.print("Please select");
+        lcd.setCursor(0, 1);
+        lcd.print("your difficulty");
+        //delay(1000);
+        choice = waitForInputDifficulty();
+        if( choice != 0 ){
+            updateDifficulty(choice);
+            return ;
+        }
+        
+        //Print details about Easy difficulty
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Easy(UP) ");
+        lcd.setCursor(0, 1);
+        lcd.print("No borders");
+        //delay(2000);
+        choice = waitForInputDifficulty();
+        if( choice != 0 ){
+            updateDifficulty(choice);
+            return ;
+        }
+
+        
+        //Print details about Medium difficulty
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Medium(UP) ");
+        lcd.setCursor(0, 1);
+        lcd.print("With borders");
+        //delay(2000);
+        choice = waitForInputDifficulty();
+        if( choice != 0 ){
+            updateDifficulty(choice);
+            return ;
+        }
+
+        //Print details about Hard difficulty
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Hard(DOWN) ");
+        lcd.setCursor(0, 1);
+        lcd.print("With borders");
+        //delay(2000);
+        choice = waitForInputDifficulty();
+        if( choice != 0 ){
+            updateDifficulty(choice);
+            return ;
+        }
+
+        
+        lcd.print("your difficulty");
+      
+    }
+    
     void Continue(){
-        move();
+        incrementLoop();
+        updateDirection();
+        
+        if( isTimeToUpdate()  )
+           move();
       
     }
     
 };
 
 
-snakeClass *snake;
+//snakeClass *snake;
 
-
+game *currentGame;
 
 
 
@@ -314,9 +440,12 @@ void setup(){
 }
 
 
-void updateScore(const int &snakeScore){
+void updateScore(const int &myScore){
+    lcd.clear();  
     lcd.setCursor(0, 1);
-    lcd.print(snakeScore);
+    lcd.print("Score: ");
+    lcd.setCursor(7, 1);
+    lcd.print(myScore);
 }
 
 void updateInputValues(){
@@ -334,6 +463,24 @@ void waitForInput(){
        delay(50);
       
     }
+  
+}
+
+int waitForInputDifficulty(){
+    int count = 0 ;
+    while( ++count < 20){
+       updateInputValues();
+       if(  isFull(xValue/128) == 1 && isFull(yValue/128) == 0 )
+            return _down;
+       if(  isFull(xValue/128) == -1 && isFull(yValue/128) == 0 )
+            return _up;
+       if(  isFull(xValue/128) == 0 && isFull(yValue/128) == 1 )
+            return _right;
+       if(  isFull(xValue/128) == 0 && isFull(yValue/128) == -1 )
+            return _left;
+       delay(50);
+    }
+    return 0;
   
 }
 
@@ -361,13 +508,16 @@ void loop()
               //Reminder
               //Add Game Menu
               waitForInput();
-              lcd.clear();  
+              lcd.clear();
+              
               currentStateOfGame = _snake;
-              snake = new snakeClass;
-              snake->start();
+              currentGame = new snakeClass(defaultDelay);
+              delay(500);
+              currentGame->waitForDifficulty();
+              currentGame->start();
               break;
            case _snake:
-              snake->Continue();
+              currentGame->Continue();
               break;
       }
       
