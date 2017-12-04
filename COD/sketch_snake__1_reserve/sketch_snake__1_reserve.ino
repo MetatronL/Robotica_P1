@@ -333,8 +333,7 @@ public:
         }else if( matrix[newPosition.x][newPosition.y] == 1 ){
             setGameOver();
             currentStateOfGame = _gameOver;
-//reminder
-//add game over            
+          
         }else{
               pop();
         }
@@ -359,7 +358,6 @@ public:
         lcd.print("Please select");
         lcd.setCursor(0, 1);
         lcd.print("your difficulty");
-        //delay(1000);
         choice = waitForInputDifficulty();
         if( choice != 0 ){
             updateDifficulty(choice);
@@ -372,7 +370,6 @@ public:
         lcd.print("Easy(UP) ");
         lcd.setCursor(0, 1);
         lcd.print("No borders");
-        //delay(2000);
         choice = waitForInputDifficulty();
         if( choice != 0 ){
             updateDifficulty(choice);
@@ -382,32 +379,31 @@ public:
         
         //Print details about Medium difficulty
         lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Medium(UP) ");
-        lcd.setCursor(0, 1);
+        lcd.setCursor( 0, 0 );
+        lcd.print( "Medium(UP) " );
+        lcd.setCursor( 0, 1 );
         lcd.print("With borders");
-        //delay(2000);
         choice = waitForInputDifficulty();
         if( choice != 0 ){
-            updateDifficulty(choice);
+            updateDifficulty( choice );
             return ;
         }
 
         //Print details about Hard difficulty
         lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Hard(DOWN) ");
+        lcd.setCursor( 0, 0 );
+        lcd.print( "Hard(DOWN) " );
         lcd.setCursor(0, 1);
-        lcd.print("With borders");
+        lcd.print( "With borders" );
         //delay(2000);
         choice = waitForInputDifficulty();
         if( choice != 0 ){
-            updateDifficulty(choice);
+            updateDifficulty( choice );
             return ;
         }
 
         
-        lcd.print("your difficulty");
+        lcd.print( "your difficulty" );
       
     }
     
@@ -423,7 +419,7 @@ public:
 };
 
 
-//snakeClass *snake;
+
 
 game *currentGame;
 
@@ -436,25 +432,25 @@ game *currentGame;
 void setup(){
 
   
-  lc.shutdown(0,false);
-  lc.setIntensity(0,10);
+  lc.shutdown( 0,false );
+  lc.setIntensity( 0,10 );
 
   currentStateOfGame = _justStarted;
-  randomSeed(analogRead(A0));   
-  Serial.begin(9600); 
+  randomSeed( analogRead( A0 ) );   
+  Serial.begin( 9600 ); 
   dotState = _dotNotSet;
 
-  // set up the LCD's number of columns and rows:
-  lcd.begin(16, 2);
-  // Print a message to the LCD.
-  lcd.print("Press anything");
-  lcd.setCursor(0, 1);
-  lcd.print("to start..");
-  pinMode(pinCenter, INPUT  ); 
+  
+  lcd.begin( 16, 2 );
+  
+  lcd.print( "Press anything" );
+  lcd.setCursor( 0, 1 );
+  lcd.print( "to start.." );
+  pinMode( pinCenter, INPUT  ); 
 }
 
 
-void updateScore(const int &myScore){
+void updateScore( const int &myScore ){
     lcd.clear();  
     lcd.setCursor(0, 1);
     lcd.print("Score: ");
@@ -463,18 +459,18 @@ void updateScore(const int &myScore){
 }
 
 void updateInputValues(){
-  centerButtonState = digitalRead(pinCenter);
-  xValue = analogRead(pinX);  
-  yValue = analogRead(pinY);
+  centerButtonState = digitalRead( pinCenter );
+  xValue = analogRead( pinX );  
+  yValue = analogRead( pinY );
   
 }
 
 void waitForInput(){
     while( 1 == 1){
        updateInputValues();
-       if( centerButtonState == LOW || isFull(xValue/128) || isFull(yValue/128) )
+       if( centerButtonState == LOW || isFull( xValue / 128 ) || isFull( yValue / 128 ) )
           break;
-       delay(50);
+       delay( 50 );
       
     }
   
@@ -484,13 +480,13 @@ int waitForInputDifficulty(){
     int count = 0 ;
     while( ++count < 20){
        updateInputValues();
-       if(  isFull(xValue/128) == 1 && isFull(yValue/128) == 0 )
+       if(  isFull( xValue / 128) ==  1 && isFull( yValue / 128 ) == 0  )
             return _down;
-       if(  isFull(xValue/128) == -1 && isFull(yValue/128) == 0 )
+       if(  isFull( xValue / 128) == -1 && isFull( yValue / 128 ) == 0  )
             return _up;
-       if(  isFull(xValue/128) == 0 && isFull(yValue/128) == 1 )
+       if(  isFull( xValue / 128) == 0  && isFull( yValue / 128 ) == 1  )
             return _right;
-       if(  isFull(xValue/128) == 0 && isFull(yValue/128) == -1 )
+       if(  isFull( xValue / 128) == 0  && isFull( yValue / 128 ) == -1 )
             return _left;
        delay(50);
     }
@@ -498,51 +494,31 @@ int waitForInputDifficulty(){
   
 }
 
-void loop()
+void loop(){
 
-{
-
-    // lcd.setCursor(0, 1);
-  // print the number of seconds since reset:
-  //lcd.print(millis() / 1000);
-  //lcd.scrollDisplayRight();
-    //updateScore(snakeScore);
-    
       updateInputValues();
     
       if( centerButtonState )
           gamePause = 1 - gamePause;
-      if( gamePause)
-          return;
-
-      switch( currentStateOfGame ){
-          case _justStarted:
-
           
-              //Reminder
-              //Add Game Menu
-              waitForInput();
-              lcd.clear();
-              
-              currentStateOfGame = _snake;
-              currentGame = new snakeClass(defaultDelay);
-              delay(500);
-              currentGame->waitForDifficulty();
-              currentGame->start();
-              break;
-           case _snake:
-              currentGame->Continue();
-              break;
-      }
-      
-     
-  
-      
+      if( gamePause == 0 )
+        switch( currentStateOfGame ){
+            case _justStarted:
+                waitForInput();
+                lcd.clear();
+                
+                currentStateOfGame = _snake;
+                currentGame = new snakeClass( defaultDelay );
+                delay(500);
+                currentGame->waitForDifficulty();
+                currentGame->start();
+                break;
+             case _snake:
+                currentGame->Continue();
+                break;
+        }
 
-  
-
-     
-    delay(defaultDelay);
+    delay( defaultDelay );
     
 }
 
