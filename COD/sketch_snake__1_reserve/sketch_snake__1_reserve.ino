@@ -189,7 +189,7 @@ public:
 class snakeClass : public game,public queue{
     
     const int _up = 1, _down = -1, _right = 2, _left = -2;
-    const int difficultyEasyDelay = 350, difficultyMediumDelay = 250, difficultyHardDelay = 100;
+    const int difficultyEasyDelay = 350, difficultyMediumDelay = 250, difficultyHardDelay = 200;
 
     int lastDirection, currentDirection, foundWhileWaitingDirection;
     int useBorder ;
@@ -390,7 +390,7 @@ public:
         //Print details about Medium difficulty
         lcd.clear();
         lcd.setCursor( 0, 0 );
-        lcd.print( "Medium(UP) " );
+        lcd.print( "Medium(Right) " );
         lcd.setCursor( 0, 1 );
         lcd.print("With borders");
         choice = waitForInputDifficulty();
