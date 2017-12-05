@@ -189,7 +189,7 @@ public:
 class snakeClass : public game,public queue{
     
     const int _up = 1, _down = -1, _right = 2, _left = -2;
-    const int difficultyEasyDelay = 400, difficultyMediumDelay = 300, difficultyHardDelay = 150;
+    const int difficultyEasyDelay = 350, difficultyMediumDelay = 250, difficultyHardDelay = 100;
 
     int lastDirection, currentDirection, foundWhileWaitingDirection;
     int useBorder ;
@@ -483,7 +483,7 @@ void loop(){
                 currentGame->continueGame();
                 break;
         }
-    LOOP_END:
+    
     delay( defaultDelay );
     
 }
