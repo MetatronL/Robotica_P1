@@ -1,5 +1,9 @@
 # Robotica_P1
 
+By Paun Bogdan Gabriel(233)
+Laborant: Ivona , grupa Marti
+
+
 Documentatie:
 
 Proiect: Snake
